@@ -16,4 +16,5 @@ export interface LoginRes {
     permissions?: Permission[];
     name?: string;
     lastLogin?: Date;
+    industry: string;
   }

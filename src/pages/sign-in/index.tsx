@@ -1,10 +1,38 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CommonFooter from "../../components/common/commonFooter";
 import CommonNavBar from "../../components/common/commonNavbar";
 import { RouteName } from "../../routes";
 import { getAssetPath } from "../../utils/assetsUtil";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { AuthService } from "../../services/authService";
+import { toast } from "react-toastify";
+
+const schema = yup.object({
+    email: yup.string().required("Email is required"),
+    password: yup.string().required("Password is required"),
+    rememberMe: yup.boolean()
+});
 
 const Login = () => {
+    const navigate = useNavigate();
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+        resolver: yupResolver(schema),
+    });
+
+    const onSubmit = (data: any) => {
+        const email = data.email;
+        AuthService.userLogin(data).then(res => {
+            if (res.success) {
+                navigate(`/analatics`, { replace: true })
+            } else if (res.errorCode === 11) { 
+                navigate("/verify", { state: { email: email } })
+            } else {
+            toast.error(res.error);
+            }
+        })
+    };
 
     return (
         <>
@@ -21,35 +49,37 @@ const Login = () => {
                                     <p className="mb-0">Enter your email and password to sign in</p>
                                 </div>
                                 <div className="flex-auto p-6">
-                                    <form role="form">
+                                    <form onSubmit={handleSubmit(onSubmit)}>
                                     <label className="mb-2 ml-1 font-bold text-xs text-slate-700">Email</label>
                                     <div className="mb-4">
-                                        <input type="email" className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="Email" aria-label="Email" aria-describedby="email-addon" />
+                                        <input type="email" {...register("email")} className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="Email" aria-label="Email" aria-describedby="email-addon" />
+                                        <small className="error">{errors.email?.message}</small>
                                     </div>
                                     <label className="mb-2 ml-1 font-bold text-xs text-slate-700">Password</label>
                                     <div className="mb-4">
-                                        <input type="email" className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="Password" aria-label="Password" aria-describedby="password-addon" />
+                                        <input type="password" {...register("password")} className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="Password" aria-label="Password" aria-describedby="password-addon" />
+                                        <small className="error">{errors.password?.message}</small>
                                     </div>
                                     <div className="min-h-6 mb-0.5 block pl-12">
-                                        <input id="rememberMe" className="mt-0.54 rounded-10 duration-250 ease-soft-in-out after:rounded-circle after:shadow-soft-2xl after:duration-250 checked:after:translate-x-5.25 h-5 relative float-left -ml-12 w-10 cursor-pointer appearance-none border border-solid border-gray-200 bg-slate-800/10 bg-none bg-contain bg-left bg-no-repeat align-top transition-all after:absolute after:top-px after:h-4 after:w-4 after:translate-x-px after:bg-white after:content-[''] checked:border-slate-800/95 checked:bg-slate-800/95 checked:bg-none checked:bg-right" type="checkbox" />
+                                        <input id="rememberMe" {...register("rememberMe")} className="mt-0.54 rounded-10 duration-250 ease-soft-in-out after:rounded-circle after:shadow-soft-2xl after:duration-250 checked:after:translate-x-5.25 h-5 relative float-left -ml-12 w-10 cursor-pointer appearance-none border border-solid border-gray-200 bg-slate-800/10 bg-none bg-contain bg-left bg-no-repeat align-top transition-all after:absolute after:top-px after:h-4 after:w-4 after:translate-x-px after:bg-white after:content-[''] checked:border-slate-800/95 checked:bg-slate-800/95 checked:bg-none checked:bg-right" type="checkbox" />
                                         <label className="mb-2 ml-1 font-normal cursor-pointer select-none text-sm text-slate-700" htmlFor="rememberMe">Remember me</label>
                                     </div>
                                     <div className="text-center">
-                                        <button type="button" className="inline-block w-full px-6 py-3 mt-6 mb-0 font-bold text-center text-white uppercase align-middle transition-all bg-transparent border-0 rounded-lg cursor-pointer shadow-soft-md bg-x-25 bg-150 leading-pro text-xs ease-soft-in tracking-tight-soft bg-gradient-to-tl from-blue-600 to-cyan-400 hover:scale-102 hover:shadow-soft-xs active:opacity-85">Sign in</button>
+                                        <button type="submit" className="inline-block w-full px-6 py-3 mt-6 mb-0 font-bold text-center text-white uppercase align-middle transition-all bg-transparent border-0 rounded-lg cursor-pointer shadow-soft-md bg-x-25 bg-150 leading-pro text-xs ease-soft-in tracking-tight-soft bg-gradient-to-tl from-blue-600 to-cyan-400 hover:scale-102 hover:shadow-soft-xs active:opacity-85">Sign in</button>
                                     </div>
                                     </form>
                                 </div>
                                 <div className="p-6 px-1 pt-0 text-center bg-transparent border-t-0 border-t-solid rounded-b-2xl lg:px-2">
                                     <p className="mx-auto mb-6 leading-normal text-sm">
-                                    Don't have an account? 
-                                    <Link to={RouteName.SIGNUP} className="relative z-10 font-semibold text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text"> Sign up</Link>
+                                        Don't have an account? 
+                                        <Link to={RouteName.SIGNUP} className="relative z-10 font-semibold text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text"> Sign up</Link>
                                     </p>
                                 </div>
                                 </div>
                             </div>
                             <div className="w-full max-w-full px-3 lg:flex-0 shrink-0 md:w-6/12">
                                 <div className="absolute top-0 hidden w-3/5 h-full -mr-32 overflow-hidden -skew-x-10 -right-40 rounded-bl-xl md:block">
-                                <div className="absolute inset-x-0 top-0 z-0 h-full -ml-16 bg-cover skew-x-10 " style={{backgroundImage: `url(${getAssetPath('img/curved-images/curved6.jpg')})`}}></div>
+                                    <div className="absolute inset-x-0 top-0 z-0 h-full -ml-16 bg-cover skew-x-10 " style={{backgroundImage: `url(${getAssetPath('img/curved-images/curved6.jpg')})`}}></div>
                                 </div>
                             </div>
                             </div>

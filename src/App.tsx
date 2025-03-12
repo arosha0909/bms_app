@@ -1,22 +1,26 @@
-import { useState } from 'react'
 import './App.css'
 import { Routes, Route } from "react-router-dom";
 import Login from './pages/sign-in';
 import SignUp from './pages/sign-up';
 import { RouteName } from './routes';
+import Layout from './layouts';
+import Dashboard from './pages/dashboard/dashboard';
+import ToastProvider from './providers/toastProvider';
+import OTPVerification from './pages/otp';
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
+    <ToastProvider />
       <Routes>
         <Route path={RouteName.SIGNIN} element={<Login />} />
         <Route path={RouteName.SIGNUP} element={<SignUp />} />
+        <Route path={RouteName.OTP} element={<OTPVerification />} />
 
-        <Route path={RouteName.ROOT } element={<>dashboard</>}>
-          {/* <Route path="a" element={<Layout><>analatics</></Layout>} /> */}
-        </Route>
+        {/* <Route element={<Authmiddleware allowed={Role.BUS_OWNER} />}> */}
+          <Route path="analatics" element={<Layout><Dashboard /></Layout>} />
+        {/* </Route> */}
       </Routes>
     </>
   )
