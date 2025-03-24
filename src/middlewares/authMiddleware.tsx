@@ -1,45 +1,42 @@
-import { useState, useEffect } from "react"
-import { Navigate, Outlet } from "react-router-dom"
-import { useAuth, AuthData } from "../providers/authProviders"
-import { User } from "../models/user"
-import { AuthService } from "../services/authService"
+import { useState, useEffect } from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../providers/authProviders";
+import { AuthService } from "../services/authService";
 
 const Authmiddleware = (props: any) => {
-    const [user, setUser] = useAuth() as AuthData
-    const [isLoading, setIsloading] = useState<boolean>(true)
-    const token = localStorage.getItem("token")
-    const [isErr, setIsErr] = useState<boolean>(false)
-  
-    useEffect(() => {
-      AuthService.getMe()
-        .then((res: { success: any; data: User }) => {  
-          if (res.success) {
-            setUser(res.data)
-            setIsErr(false)
-          } else {
-            setIsErr(true)
-          }
-          setIsloading(false)
-        })
-        .catch((error: any) => {
-          setIsloading(false)
-        })
-    }, [])
-  
-    if(!token) {
-      return <Navigate to={{ pathname: "/sign-in" }}  replace />
-    } else {
-      if (!isLoading) {
-        if (user?.role === props.allowed) {
-          return <Outlet />
+  const { user, setUser } = useAuth();
+  const [localUser, setLocalUser] = useState(user);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isErr, setIsErr] = useState(false);
+  const [token, setToken] = useState<string | null>(localStorage.getItem("ct-token"));
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await AuthService.getMe();
+
+        if (res?.success && res?.data) {
+          setUser(res.data);
+          setLocalUser(res.data);
         } else {
-          return <Navigate to={{ pathname: "/not-found" }} replace />
+          setIsErr(true);
         }
-      } else {
-        return <div className="d-flex justify-content-center align-items-center " style={{ height: "500px" }}>
-      </div>
+      } catch (error) {
+        setIsErr(true);
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }
-  
-  export default Authmiddleware
+    };
+
+    fetchUser();
+  }, []);
+
+
+  if (!token || isErr) return <Navigate to="/sign-in" replace />;
+  if (isLoading) return <div>Loading...</div>;
+
+  return user && props.allowed.includes(user.role) ? <Outlet /> : <Navigate to="/not-found" replace />;
+
+};
+
+export default Authmiddleware;

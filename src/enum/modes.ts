@@ -1,0 +1,5 @@
+export enum Mode {
+    ACCOUNT_VERIFY = "ACCOUNT_VERIFY",
+    FORGET_PASSWORD = "FORGET_PASSWORD",
+}
+  

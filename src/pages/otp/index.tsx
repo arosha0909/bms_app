@@ -1,83 +1,87 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import CommonFooter from "../../components/common/commonFooter";
 import CommonNavBar from "../../components/common/commonNavbar";
-import { RouteName } from "../../routes";
 import { getAssetPath } from "../../utils/assetsUtil";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import OTPInput from "../../components/OTPInput";
+import { AuthService } from "../../services/authService";
+import { toast } from "react-toastify";
+import { RouteName } from "../../routes";
+import { Mode } from "../../enum/modes";
+import { UserStatus } from "../../enum/userStatus";
+import { OtpType } from "../../enum/OTPType";
 
-// Validation Schema using Yup
 const schema = yup.object({
-    otp: yup.string().required("OTP is required")
+    otp: yup.string()
+        .required("OTP is required")
+        .matches(/^\d{6}$/, "OTP must be exactly 6 digits")
 });
+
 
 const OTPVerification = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [otp, setOtp] = useState(Array(6).fill(""));
     
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+    const {
+        handleSubmit,
+        formState: { errors },
+        setValue,
+        trigger,
+    } = useForm({
         resolver: yupResolver(schema),
+        defaultValues: { otp: "" },
     });
     
-    const onSubmit = (data: any) => {
-        console.log('Submited OTP:', data)
-    };
-    
-//   const handleSubmit = (otp: string) => {
-//     AuthService.emailOTPVerification({ email: location.state?.email, otpCode: otp })
-//       .then(async res => {
-//         if (res.success) {
-//           AuthService.setToken(res.data);
-//           const data: any = await jwt_decode(res.data);
-//           navigate(`/${data?.user_role}/place-orders`, { replace: true });
-//         } else {
-//           toast.error(res.error, {
-//             position: toast.POSITION.BOTTOM_RIGHT,
-//             className: "foo-bar",
-//             style: {marginBottom: "4rem"},
-//           });
-//         }
-//       })
-//       .catch(error => {
-//         toast.error("Something went wrong. Please try again later.", {
-//           position: toast.POSITION.BOTTOM_RIGHT,
-//           className: "foo-bar",
-//           style: {marginBottom: "4rem"},
-//         });
-//       });
-//   };
-
-//   const resendOtp = () => {
-//     AuthService.resendOtp({ email: location.state?.email, otpType: OtpType.SIGNUP_OTP})
-//       .then(res => {
-//         if (res.success) {
-//           toast.success(res.message, {
-//             position: toast.POSITION.BOTTOM_RIGHT,
-//             className: "foo-bar",
-//             style: {marginBottom: "4rem"},
-//           });
-//         } else {
-//           toast.error(res.error, {
-//             position: toast.POSITION.BOTTOM_RIGHT,
-//             className: "foo-bar",
-//             style: {marginBottom: "4rem"},
-//           });
-//         }
-//       })
-//       .catch(error => {
-//         toast.error("Something went wrong. Please try again later.", {
-//           position: toast.POSITION.BOTTOM_RIGHT,
-//           className: "foo-bar",
-//           style: {marginBottom: "4rem"},
-//         });
-//       });
-//   };
-
     useEffect(() => {
-        console.log(location.state?.email);
-    }, []);
+        const otpString = otp.join("");
+        setValue("otp", otpString);
+        trigger("otp");
+    }, [otp, setValue, trigger]);
+
+    const onSubmit = (data: number | any) => {
+        AuthService.OTPVerification({email: location.state?.email, otpCode: data.otp}).then(res => {
+            if (res.success) {
+                switch (location.state?.mode) {
+                    case Mode.FORGET_PASSWORD:
+                            navigate(RouteName.CHANGE_PASSWORD, { state: { email: location.state?.email, mode: Mode.FORGET_PASSWORD }, replace: true });
+                        break;
+                    case Mode.ACCOUNT_VERIFY:
+                        AuthService.VerifyAccount({email: location.state?.email, status: UserStatus.ACTIVE}).then(res => {
+                            console.log(res.data)
+                            if (res.success) {
+                                console.log(res.data)
+                                AuthService.setToken(res.data);
+                                navigate(RouteName.ANALYTICS, { replace: true });
+                            } else {
+                                toast.error('Something went wrong.');
+                            }
+                        });
+                    break;
+                
+                    default:
+                        break;
+                }
+            } else {
+                toast.error(res.error);
+            }
+        }).catch(() => {
+            toast.error("Something went wrong. Please try again later.");
+        });
+    };
+
+    const sendOTP = () => {
+        AuthService.resendOtp({email: location.state?.email, otpType: OtpType.FORGET_PASSWORD_OTP}).then(res => {
+            if (res.success) {
+                console.log('OTP send successfully');
+            } else {
+                console.log('OTP issues');
+            }
+        });
+    }
 
 
     return (
@@ -99,12 +103,12 @@ const OTPVerification = () => {
                                         <form onSubmit={handleSubmit(onSubmit)}>
                                             <label className="mb-2 ml-1 font-bold text-xs text-slate-700">OTP Verification</label>
                                             <div className="mb-4">
-                                                <input {...register("otp")} type="text" className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-blue-600 focus:outline-none focus:transition-shadow" placeholder="OTP Verification" aria-label="OTP" aria-describedby="otp-addon" />
-                                                <small className="error">{errors.otp?.message}</small>
+                                            <OTPInput value={otp} onChange={setOtp}/>
+                                            <small className="error">{errors.otp?.message}</small>
                                             </div>
 
                                             <div className="text-center">
-                                                <button type="button" className="inline-block w-full px-6 py-3 mt-6 mb-0 font-bold text-center text-white uppercase align-middle transition-all bg-transparent border-0 rounded-lg cursor-pointer shadow-soft-md bg-x-25 bg-150 leading-pro text-xs ease-soft-in tracking-tight-soft bg-gradient-to-tl from-blue-600 to-cyan-400 hover:scale-102 hover:shadow-soft-xs active:opacity-85">Verify Account</button>
+                                                <button type="submit" className="inline-block w-full px-6 py-3 mt-6 mb-0 font-bold text-center text-white uppercase align-middle transition-all bg-transparent border-0 rounded-lg cursor-pointer shadow-soft-md bg-x-25 bg-150 leading-pro text-xs ease-soft-in tracking-tight-soft bg-gradient-to-tl from-blue-600 to-cyan-400 hover:scale-102 hover:shadow-soft-xs active:opacity-85">Verify Account</button>
                                             </div>
                                         </form>
                                     </div>
@@ -114,7 +118,7 @@ const OTPVerification = () => {
                                     <div className="p-6 px-1 pt-0 text-center bg-transparent border-t-0 border-t-solid rounded-b-2xl lg:px-2">
                                         <p className="mx-auto mb-6 leading-normal text-sm">
                                         Don't you have OTP 
-                                        <button onClick={() => {}} className="relative font-semibold text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text"> Resend</button>
+                                        <button onClick={() => sendOTP()} className="relative font-semibold text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text"> Resend</button>
                                         </p>
                                     </div>
                                 </div>

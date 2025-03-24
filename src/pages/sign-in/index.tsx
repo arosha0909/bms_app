@@ -8,6 +8,9 @@ import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { AuthService } from "../../services/authService";
 import { toast } from "react-toastify";
+import { Mode } from "../../enum/modes";
+import CustomButton from "../../components/CustomButton";
+import { useState } from "react";
 
 const schema = yup.object({
     email: yup.string().required("Email is required"),
@@ -17,21 +20,31 @@ const schema = yup.object({
 
 const Login = () => {
     const navigate = useNavigate();
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+    const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema),
     });
+    
+    const [loading, setLoading] = useState(false);
 
     const onSubmit = (data: any) => {
-        const email = data.email;
-        AuthService.userLogin(data).then(res => {
-            if (res.success) {
-                navigate(`/analatics`, { replace: true })
-            } else if (res.errorCode === 11) { 
-                navigate("/verify", { state: { email: email } })
-            } else {
-            toast.error(res.error);
-            }
-        })
+        setLoading(true);
+        try {
+            const email = data.email;
+            AuthService.userLogin(data).then(res => {
+                if (res.success) {
+                    navigate(RouteName.ANALYTICS, { replace: true })
+                } else if (res.errorCode === 11) { 
+                    navigate(RouteName.OTP, { state: { email: email, mode: Mode.ACCOUNT_VERIFY } })
+                } else {
+                toast.error(res.error);
+                }
+            })
+        } catch (error) {
+            console.error("Error:", error);
+        } finally {
+            setLoading(false);
+        }
+
     };
 
     return (
@@ -56,16 +69,21 @@ const Login = () => {
                                         <small className="error">{errors.email?.message}</small>
                                     </div>
                                     <label className="mb-2 ml-1 font-bold text-xs text-slate-700">Password</label>
-                                    <div className="mb-4">
+                                    <div className="mb-0">
                                         <input type="password" {...register("password")} className="focus:shadow-soft-primary-outline text-sm leading-5.6 ease-soft block w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 transition-all focus:border-fuchsia-300 focus:outline-none focus:transition-shadow" placeholder="Password" aria-label="Password" aria-describedby="password-addon" />
                                         <small className="error">{errors.password?.message}</small>
+                                    </div>
+                                    <div className="block mb-4 text-right">
+                                        <small onClick={() => {navigate(RouteName.CONFIRM_DETAILS)}} className="mb-2 font-normal cursor-pointer select-none text-sm text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text">Forget Password?</small>
                                     </div>
                                     <div className="min-h-6 mb-0.5 block pl-12">
                                         <input id="rememberMe" {...register("rememberMe")} className="mt-0.54 rounded-10 duration-250 ease-soft-in-out after:rounded-circle after:shadow-soft-2xl after:duration-250 checked:after:translate-x-5.25 h-5 relative float-left -ml-12 w-10 cursor-pointer appearance-none border border-solid border-gray-200 bg-slate-800/10 bg-none bg-contain bg-left bg-no-repeat align-top transition-all after:absolute after:top-px after:h-4 after:w-4 after:translate-x-px after:bg-white after:content-[''] checked:border-slate-800/95 checked:bg-slate-800/95 checked:bg-none checked:bg-right" type="checkbox" />
                                         <label className="mb-2 ml-1 font-normal cursor-pointer select-none text-sm text-slate-700" htmlFor="rememberMe">Remember me</label>
                                     </div>
                                     <div className="text-center">
-                                        <button type="submit" className="inline-block w-full px-6 py-3 mt-6 mb-0 font-bold text-center text-white uppercase align-middle transition-all bg-transparent border-0 rounded-lg cursor-pointer shadow-soft-md bg-x-25 bg-150 leading-pro text-xs ease-soft-in tracking-tight-soft bg-gradient-to-tl from-blue-600 to-cyan-400 hover:scale-102 hover:shadow-soft-xs active:opacity-85">Sign in</button>
+                                    <CustomButton type="submit" loading={loading} disabled={loading}>
+                                        Sign In
+                                    </CustomButton>
                                     </div>
                                     </form>
                                 </div>

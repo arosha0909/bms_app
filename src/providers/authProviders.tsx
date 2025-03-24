@@ -1,48 +1,27 @@
-import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useContext, useState } from "react";
 import { User } from "../models/user";
 
-export type AuthData = [User | undefined, (user: User) => void, () => void];
+type AuthData = {
+  user: User | null;
+  setUser: (user: User | null) => void;
+};
 
-const AuthContext = React.createContext<AuthData>([undefined, () => {}, () => {}]);
+const AuthContext = createContext<AuthData | undefined>(undefined);
 
-export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<User | undefined>(undefined);
-  const [image, setImage] = useImage() as ImageData;
-  const navigate = useNavigate();
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
 
-  const clearCrispSessionLocalStorage = () => {
-    const crispSessionPrefix = "crisp-client/session/";
-
-    // Get all keys from local storage
-    const keys = Object.keys(localStorage);
-
-    // Filter and remove keys that match the Crisp session prefix
-    keys.forEach(key => {
-      if (key.startsWith(crispSessionPrefix)) {
-        localStorage.removeItem(key);
-      }
-    });
-  };
-
-  const logout = () => {
-    navigate(`/signin`, { replace: true });
-    localStorage.removeItem("token");
-    clearCrispSessionLocalStorage();
-    setUser({});
-    setImage({});
-    //refresh the client browser after signout for safe end Crisp chat session
-    window.location.reload();
-  };
-
-  return <AuthContext.Provider value={[user, setUser, logout]}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
-
-type UserData = [User | undefined, (user: User | undefined) => void];
-const UserContext = React.createContext<UserData>([undefined, () => ({})]);
-
-export default UserContext;
