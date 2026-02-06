@@ -27,6 +27,12 @@ export interface PasswordsResetDetails {
     oldPassword: string;
     newPassword: string;
 }
+
+export interface PasswordsChange {
+    email: string;
+    password: string;
+    otp: string;
+}
   
 
 export class AuthService {
@@ -67,7 +73,7 @@ export class AuthService {
     }
     
 
-    public static async registerBusOwner(data: User): Promise<AppResponse<User>> {
+    public static async registerOwner(data: User): Promise<AppResponse<User>> {
         const ep = Util.apiPublicUrl("register");
         const res = await axios.post<User, AppResponse<any>>(ep, data);
         return res;
@@ -88,6 +94,12 @@ export class AuthService {
     public static async ResetPassword(passwords: PasswordsResetDetails): Promise<AppResponse<any>> {
         const ep = Util.apiPublicUrl("password/reset");
         const res = await axios.post<PasswordsResetDetails, AppResponse<any>>(ep, passwords);
+        return res.data;
+    }
+
+    public static async ChangePassword(passwords: PasswordsChange): Promise<AppResponse<any>> {
+        const ep = Util.apiPublicUrl("password/change");
+        const res = await axios.post<PasswordsChange, AppResponse<any>>(ep, passwords);
         return res.data;
     }
 

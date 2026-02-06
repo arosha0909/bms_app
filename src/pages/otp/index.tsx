@@ -47,11 +47,11 @@ const OTPVerification = () => {
             if (res.success) {
                 switch (location.state?.mode) {
                     case Mode.FORGET_PASSWORD:
-                            navigate(RouteName.CHANGE_PASSWORD, { state: { email: location.state?.email, mode: Mode.FORGET_PASSWORD }, replace: true });
+                            navigate(RouteName.CHANGE_PASSWORD, { state: { email: location.state?.email, otp: data.otp, mode: Mode.FORGET_PASSWORD }, replace: true });
                         break;
                     case Mode.ACCOUNT_VERIFY:
                         AuthService.VerifyAccount({email: location.state?.email, status: UserStatus.ACTIVE}).then(res => {
-                            console.log(res.data)
+                            console.log(res);
                             if (res.success) {
                                 console.log(res.data)
                                 AuthService.setToken(res.data);
@@ -117,7 +117,7 @@ const OTPVerification = () => {
 
                                     <div className="p-6 px-1 pt-0 text-center bg-transparent border-t-0 border-t-solid rounded-b-2xl lg:px-2">
                                         <p className="mx-auto mb-6 leading-normal text-sm">
-                                        Don't you have OTP 
+                                        Don't you have OTP &nbsp;
                                         <button onClick={() => sendOTP()} className="relative font-semibold text-transparent bg-gradient-to-tl from-blue-600 to-cyan-400 bg-clip-text"> Resend</button>
                                         </p>
                                     </div>

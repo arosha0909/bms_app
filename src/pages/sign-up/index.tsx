@@ -42,7 +42,7 @@ const SignUp = () => {
     });
     
     const onSubmit = (data: any) => {
-        AuthService.registerBusOwner(data).then(res => {
+        AuthService.registerOwner(data).then(res => {
             if (res.success) {
 
             } else {
